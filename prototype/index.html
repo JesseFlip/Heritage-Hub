@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="theme-color" content="#b91c1c" />
+<title>HeritageHub — Discover local heritage events</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js" defer></script>
+<style>
+  :root{
+    --bg:#faf7f2; --surface:#ffffff; --surface-2:#f4efe7; --text:#1c1917; --muted:#78716c;
+    --border:#e7e1d6; --brand:#b91c1c; --brand-2:#f97316; --accent:#7c3aed; --ok:#15803d;
+    --shadow:0 1px 2px rgba(28,25,23,.06),0 8px 24px rgba(28,25,23,.08); --radius:16px;
+  }
+  [data-theme="dark"]{
+    --bg:#14110e; --surface:#1f1b16; --surface-2:#2a241d; --text:#f5f0e8; --muted:#a8a29e;
+    --border:#352e25; --brand:#f97316; --brand-2:#fb923c; --accent:#a78bfa; --ok:#4ade80;
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.45);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    background:var(--bg);color:var(--text);line-height:1.5;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+  button{font:inherit;cursor:pointer;border:none;background:none;color:inherit}
+  a{color:inherit}
+  .app{max-width:520px;margin:0 auto;min-height:100vh;background:var(--bg);position:relative;padding-bottom:76px}
+  /* Header */
+  header{position:sticky;top:0;z-index:40;background:color-mix(in srgb,var(--bg) 88%,transparent);
+    backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:14px 16px 10px}
+  .brandrow{display:flex;align-items:center;gap:10px}
+  .logo{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,var(--brand),var(--brand-2));
+    display:grid;place-items:center;font-size:19px;box-shadow:var(--shadow)}
+  .brandname{font-weight:800;font-size:19px;letter-spacing:-.02em}
+  .brandname span{color:var(--brand)}
+  .headtools{margin-left:auto;display:flex;gap:8px}
+  .icobtn{width:38px;height:38px;border-radius:11px;background:var(--surface);border:1px solid var(--border);
+    display:grid;place-items:center;font-size:17px;box-shadow:var(--shadow)}
+  .loc{display:flex;align-items:center;gap:6px;margin-top:10px;font-size:13px;color:var(--muted)}
+  .loc b{color:var(--text);font-weight:600}
+  .loc button{color:var(--brand);font-weight:600;font-size:13px}
+  /* Search + filters */
+  .search{margin-top:12px;display:flex;align-items:center;gap:8px;background:var(--surface);
+    border:1px solid var(--border);border-radius:12px;padding:10px 12px;box-shadow:var(--shadow)}
+  .search input{border:none;background:none;outline:none;width:100%;color:var(--text);font-size:15px}
+  .chips{display:flex;gap:8px;overflow-x:auto;padding:12px 16px 4px;scrollbar-width:none}
+  .chips::-webkit-scrollbar{display:none}
+  .chip{white-space:nowrap;padding:7px 13px;border-radius:999px;border:1px solid var(--border);
+    background:var(--surface);font-size:13px;font-weight:600;color:var(--muted);display:flex;align-items:center;gap:6px}
+  .chip.on{background:var(--brand);color:#fff;border-color:var(--brand)}
+  /* Radius */
+  .radiusbar{padding:8px 16px 4px;display:flex;align-items:center;gap:12px}
+  .radiusbar label{font-size:12px;color:var(--muted);font-weight:600;white-space:nowrap}
+  .radiusbar input[type=range]{flex:1;accent-color:var(--brand)}
+  .radiusbar .val{font-size:13px;font-weight:700;color:var(--brand);min-width:52px;text-align:right}
+  /* Map */
+  #map{height:230px;margin:12px 16px 0;border-radius:var(--radius);border:1px solid var(--border);
+    box-shadow:var(--shadow);z-index:1}
+  .maptoggle{padding:12px 16px 0}
+  .maptoggle button{width:100%;padding:10px;border-radius:12px;background:var(--surface);border:1px solid var(--border);
+    font-weight:700;font-size:14px;box-shadow:var(--shadow);display:flex;align-items:center;justify-content:center;gap:8px}
+  /* Section title */
+  .sectitle{padding:18px 16px 8px;display:flex;align-items:baseline;gap:8px}
+  .sectitle h2{font-size:17px;font-weight:800;letter-spacing:-.01em}
+  .sectitle .count{font-size:13px;color:var(--muted);font-weight:600}
+  /* Event cards */
+  .feed{padding:0 16px;display:flex;flex-direction:column;gap:14px}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+    overflow:hidden;box-shadow:var(--shadow);transition:transform .12s ease}
+  .card:active{transform:scale(.99)}
+  .card .hero{height:110px;display:flex;align-items:center;justify-content:center;position:relative}
+  .card .hero .emoji{font-size:52px;filter:drop-shadow(0 4px 8px rgba(0,0,0,.25))}
+  .card .hero .price{position:absolute;top:10px;right:10px;background:rgba(0,0,0,.55);color:#fff;
+    font-size:11px;font-weight:700;padding:4px 9px;border-radius:999px;backdrop-filter:blur(4px)}
+  .card .hero .fav{position:absolute;top:8px;left:8px;width:34px;height:34px;border-radius:50%;
+    background:rgba(0,0,0,.35);display:grid;place-items:center;font-size:16px;backdrop-filter:blur(4px)}
+  .card .body{padding:12px 14px 14px}
+  .card .cats{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:7px}
+  .cat{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;
+    padding:3px 8px;border-radius:6px;background:var(--surface-2);color:var(--muted)}
+  .card h3{font-size:15.5px;font-weight:750;letter-spacing:-.01em;line-height:1.3;margin-bottom:6px}
+  .meta{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted)}
+  .meta .row{display:flex;align-items:center;gap:7px}
+  .meta .row b{color:var(--text);font-weight:600}
+  .dist{color:var(--brand);font-weight:700}
+  .empty{text-align:center;color:var(--muted);padding:40px 24px;font-size:14px}
+  /* Bottom nav */
+  .nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:520px;
+    background:color-mix(in srgb,var(--bg) 90%,transparent);backdrop-filter:blur(12px);
+    border-top:1px solid var(--border);display:flex;z-index:40;padding:8px 0 max(8px,env(safe-area-inset-bottom))}
+  .nav button{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10.5px;
+    font-weight:600;color:var(--muted);padding:4px 0}
+  .nav button.on{color:var(--brand)}
+  .nav button .ic{font-size:20px}
+  /* Detail sheet */
+  .sheet{position:fixed;inset:0;z-index:60;background:var(--bg);max-width:520px;margin:0 auto;
+    overflow-y:auto;transform:translateY(100%);transition:transform .28s cubic-bezier(.32,.72,0,1);
+    display:flex;flex-direction:column}
+  .sheet.open{transform:translateY(0)}
+  .sheet .dhero{height:200px;display:flex;align-items:center;justify-content:center;position:relative}
+  .sheet .dhero .emoji{font-size:88px;filter:drop-shadow(0 6px 14px rgba(0,0,0,.3))}
+  .sheet .back{position:absolute;top:14px;left:14px;width:40px;height:40px;border-radius:50%;
+    background:rgba(0,0,0,.4);color:#fff;display:grid;place-items:center;font-size:20px;backdrop-filter:blur(6px)}
+  .sheet .favbig{position:absolute;top:14px;right:14px;width:40px;height:40px;border-radius:50%;
+    background:rgba(0,0,0,.4);color:#fff;display:grid;place-items:center;font-size:19px;backdrop-filter:blur(6px)}
+  .dbody{padding:18px 18px 120px}
+  .dbody h1{font-size:22px;font-weight:800;letter-spacing:-.02em;line-height:1.25}
+  .dorg{color:var(--muted);font-size:14px;margin-top:4px}
+  .dcats{display:flex;gap:6px;flex-wrap:wrap;margin:12px 0}
+  .infogrid{display:grid;grid-template-columns:1fr;gap:10px;margin:14px 0}
+  .infocard{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px 14px;
+    display:flex;gap:12px;align-items:center;box-shadow:var(--shadow)}
+  .infocard .ic{font-size:20px}
+  .infocard .t{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;font-weight:700}
+  .infocard .v{font-weight:650;font-size:14.5px}
+  .ddesc{margin:14px 0;color:var(--text);font-size:15px;opacity:.92}
+  .dsub{font-size:16px;font-weight:800;margin:20px 0 10px}
+  .itin{display:flex;flex-direction:column;gap:0}
+  .itin .step{display:flex;gap:14px;padding:10px 0;border-bottom:1px solid var(--border)}
+  .itin .step:last-child{border-bottom:none}
+  .itin .time{font-weight:800;color:var(--brand);font-size:13.5px;min-width:70px}
+  .itin .act{font-size:14.5px}
+  #dmap{height:170px;border-radius:12px;border:1px solid var(--border);margin-top:6px;box-shadow:var(--shadow)}
+  /* Action bar */
+  .actionbar{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:520px;
+    background:color-mix(in srgb,var(--bg) 92%,transparent);backdrop-filter:blur(12px);border-top:1px solid var(--border);
+    padding:12px 16px max(12px,env(safe-area-inset-bottom));display:flex;gap:10px;z-index:61}
+  .actionbar .primary{flex:1;background:var(--brand);color:#fff;font-weight:800;font-size:15px;
+    padding:14px;border-radius:13px;box-shadow:var(--shadow)}
+  .actionbar .sec{width:52px;background:var(--surface);border:1px solid var(--border);border-radius:13px;
+    display:grid;place-items:center;font-size:19px;box-shadow:var(--shadow)}
+  /* Install banner */
+  .install{margin:12px 16px 0;background:linear-gradient(135deg,var(--brand),var(--brand-2));color:#fff;
+    border-radius:14px;padding:14px;display:flex;align-items:center;gap:12px;box-shadow:var(--shadow)}
+  .install .ic{font-size:26px}
+  .install .txt{flex:1;font-size:13px;font-weight:600;line-height:1.35}
+  .install button{background:#fff;color:var(--brand);font-weight:800;font-size:13px;padding:8px 12px;border-radius:9px;white-space:nowrap}
+  .install .x{background:transparent;color:#fff;font-size:18px;width:24px;padding:0}
+  /* Toast */
+  .toast{position:fixed;bottom:96px;left:50%;transform:translateX(-50%) translateY(20px);opacity:0;
+    background:var(--text);color:var(--bg);padding:11px 18px;border-radius:11px;font-size:13.5px;font-weight:600;
+    z-index:80;transition:all .25s ease;pointer-events:none;box-shadow:var(--shadow);max-width:90%}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  .hidden{display:none!important}
+  .banner-demo{background:#dcfce7;color:#166534;font-size:11.5px;text-align:center;padding:7px 10px;font-weight:600;border-bottom:1px solid #86efac}
+  .banner-demo b{font-weight:800}
+  .dsource{display:inline-flex;align-items:center;gap:6px;margin-top:8px;font-size:12px;font-weight:600;
+    color:var(--muted);text-decoration:underline;background:var(--surface-2);padding:5px 10px;border-radius:8px}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="banner-demo">✅ Showing <b>real DFW community events</b> from organizers' official pages · tap “View official page” to confirm exact date &amp; time</div>
+  <header>
+    <div class="brandrow">
+      <div class="logo">🪷</div>
+      <div class="brandname">Heritage<span>Hub</span></div>
+      <div class="headtools">
+        <button class="icobtn" id="themeBtn" title="Toggle theme">🌙</button>
+        <button class="icobtn" id="bookmarksBtn" title="Bookmarks">🔖</button>
+      </div>
+    </div>
+    <div class="loc">
+      📍 Showing events near <b id="locName">Dallas, TX</b>
+      <button id="useLoc">Use my location</button>
+    </div>
+    <div class="search">
+      🔎 <input id="searchInput" placeholder="Search events, temples, festivals…" />
+    </div>
+  </header>
+
+  <div class="chips" id="chips"></div>
+
+  <div class="radiusbar">
+    <label>Within</label>
+    <input type="range" id="radius" min="5" max="60" step="5" value="30" />
+    <div class="val" id="radiusVal">30 mi</div>
+  </div>
+
+  <div class="maptoggle">
+    <button id="mapToggle">🗺️ <span>Show map view</span></button>
+  </div>
+  <div id="map" class="hidden"></div>
+
+  <div id="installBanner" class="install">
+    <div class="ic">📲</div>
+    <div class="txt">Add HeritageHub to your home screen — works offline at crowded venues.</div>
+    <button id="installBtn">Install</button>
+    <button class="x" id="installX">×</button>
+  </div>
+
+  <div class="sectitle" id="feedTitle">
+    <h2>Upcoming near you</h2><span class="count" id="feedCount"></span>
+  </div>
+  <div class="feed" id="feed"></div>
+</div>
+
+<!-- Detail sheet -->
+<div class="sheet" id="sheet">
+  <div class="dhero" id="dhero">
+    <button class="back" id="backBtn">←</button>
+    <button class="favbig" id="favBig">🤍</button>
+    <div class="emoji" id="dEmoji"></div>
+  </div>
+  <div class="dbody">
+    <h1 id="dTitle"></h1>
+    <div class="dorg" id="dOrg"></div>
+    <div class="dcats" id="dCats"></div>
+    <div class="infogrid">
+      <div class="infocard"><span class="ic">📅</span><div><div class="t">When</div><div class="v" id="dWhen"></div></div></div>
+      <div class="infocard"><span class="ic">📍</span><div><div class="t">Where</div><div class="v" id="dWhere"></div></div></div>
+      <div class="infocard"><span class="ic">🎟️</span><div><div class="t">Admission</div><div class="v" id="dPrice"></div></div></div>
+    </div>
+    <p class="ddesc" id="dDesc"></p>
+    <div class="dsub">Itinerary</div>
+    <div class="itin" id="dItin"></div>
+    <div class="dsub">Location</div>
+    <div id="dmap"></div>
+  </div>
+  <div class="actionbar">
+    <button class="primary" id="rsvpBtn">RSVP · Get Tickets</button>
+    <button class="sec" id="calBtn" title="Add to calendar">📆</button>
+    <button class="sec" id="dirBtn" title="Directions">🧭</button>
+    <button class="sec" id="shareBtn" title="Share">↗</button>
+  </div>
+</div>
+
+<!-- Bottom nav -->
+<div class="nav">
+  <button class="on" data-tab="discover"><span class="ic">🧭</span>Discover</button>
+  <button data-tab="map"><span class="ic">🗺️</span>Map</button>
+  <button data-tab="saved"><span class="ic">🔖</span>Saved</button>
+  <button data-tab="profile"><span class="ic">👤</span>Profile</button>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const EVENTS = [
+  {
+    "id": "gssnt-sunday-langar",
+    "title": "Sunday Langar — Free Community Feast",
+    "organizer": "Gurdwara Singh Sabha of North Texas",
+    "category": ["Food/Free Feast", "Volunteer", "Spiritual"],
+    "startsAt": "2026-08-02T11:30:00-05:00",
+    "endsAt": "2026-08-02T14:00:00-05:00",
+    "venueName": "Gurdwara Singh Sabha of North Texas",
+    "address": "1201 Abrams Rd, Richardson, TX 75081",
+    "lat": 32.9686,
+    "lng": -96.7003,
+    "heroEmoji": "🍲",
+    "gradient": ["#f59e0b", "#ea580c"],
+    "description": "Everyone is welcome to share a free, freshly prepared vegetarian meal (langar) in the community hall. Sikh tradition welcomes people of all faiths and backgrounds. Volunteers are always welcome to help with seva (serving and cleanup).",
+    "itinerary": [
+      { "time": "11:30 AM", "activity": "Doors Open — Seating Begins" },
+      { "time": "12:00 PM", "activity": "Langar Service" },
+      { "time": "1:30 PM", "activity": "Volunteer Cleanup (Seva)" }
+    ],
+    "rsvpUrl": "https://www.gssofnt.com/",
+    "sourceUrl": "https://www.gssofnt.com/",
+    "priceLabel": "Free",
+    "featured": false
+  },
+  {
+    "id": "epic-jummah-gathering",
+    "title": "Friday Jummah & Community Gathering",
+    "organizer": "East Plano Islamic Center (EPIC)",
+    "category": ["Spiritual", "Food/Free Feast"],
+    "startsAt": "2026-08-07T13:00:00-05:00",
+    "endsAt": "2026-08-07T14:30:00-05:00",
+    "venueName": "EPIC Masjid",
+    "address": "4700 14th St, Plano, TX 75074",
+    "lat": 33.0300,
+    "lng": -96.6786,
+    "heroEmoji": "🕌",
+    "gradient": ["#0ea5e9", "#4f46e5"],
+    "description": "Join the congregation for Friday Jummah prayer followed by a community gathering. Newcomers and visitors are welcome. Light refreshments are often shared afterward.",
+    "itinerary": [
+      { "time": "1:00 PM", "activity": "Khutbah (Sermon)" },
+      { "time": "1:30 PM", "activity": "Jummah Prayer" },
+      { "time": "2:00 PM", "activity": "Community Gathering & Refreshments" }
+    ],
+    "rsvpUrl": "https://epicmasjid.org/",
+    "sourceUrl": "https://epicmasjid.org/",
+    "priceLabel": "Free",
+    "featured": false
+  },
+  {
+    "id": "ksht-hanuman-annadanam",
+    "title": "Hanuman Chalisa Parayanam & Annadanam",
+    "organizer": "Karya Siddhi Hanuman Temple",
+    "category": ["Spiritual", "Rituals", "Food/Free Feast"],
+    "startsAt": "2026-08-16T17:00:00-05:00",
+    "endsAt": "2026-08-16T20:00:00-05:00",
+    "venueName": "Karya Siddhi Hanuman Temple",
+    "address": "12030 Independence Pkwy, Frisco, TX 75035",
+    "lat": 33.1350,
+    "lng": -96.8290,
+    "heroEmoji": "🛕",
+    "gradient": ["#f97316", "#b91c1c"],
+    "description": "An evening of collective Hanuman Chalisa recitation and devotional chanting, followed by Annadanam — a free blessed community meal served to all attendees. Families welcome.",
+    "itinerary": [
+      { "time": "5:00 PM", "activity": "Hanuman Chalisa Parayanam" },
+      { "time": "6:30 PM", "activity": "Aarti & Blessings" },
+      { "time": "7:00 PM", "activity": "Annadanam (Free Community Meal)" }
+    ],
+    "rsvpUrl": "https://www.dallashanuman.org/calendar",
+    "sourceUrl": "https://www.dallashanuman.org/calendar",
+    "priceLabel": "Free",
+    "featured": false
+  },
+  {
+    "id": "rkt-janmashtami-2026",
+    "title": "Krishna Janmashtami Celebrations",
+    "organizer": "Radha Krishna Temple of Dallas",
+    "category": ["Spiritual", "Rituals", "Kids Activities", "Food/Free Feast"],
+    "startsAt": "2026-09-04T18:00:00-05:00",
+    "endsAt": "2026-09-04T23:30:00-05:00",
+    "venueName": "Radha Krishna Temple",
+    "address": "1450 N Watters Rd, Allen, TX 75013",
+    "lat": 33.1085,
+    "lng": -96.6670,
+    "heroEmoji": "🦚",
+    "gradient": ["#6366f1", "#9333ea"],
+    "description": "Celebrate the birth of Lord Krishna with bhajans, abhishekam, jhula darshan, and a midnight aarti. Kids activities and mahaprasad (blessed feast) for all. A joyful night for the whole family.",
+    "itinerary": [
+      { "time": "6:00 PM", "activity": "Bhajans & Kirtan" },
+      { "time": "7:30 PM", "activity": "Krishna Abhishekam" },
+      { "time": "9:00 PM", "activity": "Kids Dress-up & Cultural Program" },
+      { "time": "12:00 AM", "activity": "Midnight Aarti & Mahaprasad" }
+    ],
+    "rsvpUrl": "https://www.radhakrishnatemple.net/",
+    "sourceUrl": "https://www.radhakrishnatemple.net/",
+    "priceLabel": "Free",
+    "featured": true
+  },
+  {
+    "id": "dfwht-ganesh-chaturthi-2026",
+    "title": "Ganesh Chaturthi Utsav",
+    "organizer": "DFW Hindu Temple Society (Ekta Mandir)",
+    "category": ["Spiritual", "Rituals", "Food/Free Feast", "Kids Activities"],
+    "startsAt": "2026-09-14T17:30:00-05:00",
+    "endsAt": "2026-09-14T21:00:00-05:00",
+    "venueName": "DFW Hindu Temple (Ekta Mandir)",
+    "address": "1605 N Britain Rd, Irving, TX 75061",
+    "lat": 32.8360,
+    "lng": -96.9565,
+    "heroEmoji": "🐘",
+    "gradient": ["#f97316", "#b91c1c"],
+    "description": "Welcome Lord Ganesha with special pujas, modak offerings, and cultural performances. Kids activities and prasad for all attendees. All families and visitors are welcome.",
+    "itinerary": [
+      { "time": "5:30 PM", "activity": "Ganesh Sthapana & Puja" },
+      { "time": "6:30 PM", "activity": "Ganesh Homam" },
+      { "time": "7:30 PM", "activity": "Cultural Performances & Kids Program" },
+      { "time": "8:30 PM", "activity": "Maha Aarti & Prasad" }
+    ],
+    "rsvpUrl": "https://www.dfwhindutemple.org/temple-calendar/",
+    "sourceUrl": "https://www.dfwhindutemple.org/temple-calendar/",
+    "priceLabel": "Free",
+    "featured": true
+  },
+  {
+    "id": "ksht-navratri-garba-2026",
+    "title": "Navratri Garba & Dandiya Night",
+    "organizer": "Karya Siddhi Hanuman Temple",
+    "category": ["Live Music/Bhajan", "Kids Activities", "Food/Free Feast"],
+    "startsAt": "2026-10-17T19:00:00-05:00",
+    "endsAt": "2026-10-17T23:30:00-05:00",
+    "venueName": "Karya Siddhi Hanuman Temple",
+    "address": "12030 Independence Pkwy, Frisco, TX 75035",
+    "lat": 33.1350,
+    "lng": -96.8290,
+    "heroEmoji": "💃",
+    "gradient": ["#db2777", "#7c3aed"],
+    "description": "Dress in your festive best for a night of Garba and Dandiya Raas with live dhol during Sharad Navratri. Snacks available. Beginners and families welcome!",
+    "itinerary": [
+      { "time": "7:00 PM", "activity": "Aarti" },
+      { "time": "7:30 PM", "activity": "Garba Circles Begin" },
+      { "time": "9:30 PM", "activity": "Dandiya Raas" },
+      { "time": "10:30 PM", "activity": "Open Dance Floor" }
+    ],
+    "rsvpUrl": "https://www.dallashanuman.org/calendar",
+    "sourceUrl": "https://www.dallashanuman.org/calendar",
+    "priceLabel": "Check with organizer",
+    "featured": false
+  },
+  {
+    "id": "dfl-diwali-mela-2026",
+    "title": "Diwali Mela — Dallas Festival of Lights",
+    "organizer": "Dallas Festival of Lights",
+    "category": ["Food/Free Feast", "Kids Activities", "Live Music/Bhajan"],
+    "startsAt": "2026-11-07T16:00:00-06:00",
+    "endsAt": "2026-11-07T22:00:00-06:00",
+    "venueName": "Dallas Festival of Lights Grounds",
+    "address": "3700 Hogge Dr, Parker, TX 75002",
+    "lat": 33.0620,
+    "lng": -96.6180,
+    "heroEmoji": "🪔",
+    "gradient": ["#eab308", "#c026d3"],
+    "description": "One of the largest Diwali melas in Texas — food stalls, a bustling bazaar, live music and dance, a kids zone, and a grand fireworks finale to celebrate the festival of lights.",
+    "itinerary": [
+      { "time": "4:00 PM", "activity": "Food Stalls & Bazaar Open" },
+      { "time": "6:00 PM", "activity": "Live Music & Dance" },
+      { "time": "8:30 PM", "activity": "Diya Lighting Ceremony" },
+      { "time": "9:15 PM", "activity": "Fireworks Finale" }
+    ],
+    "rsvpUrl": "https://www.dallasfestivaloflights.com/tickets",
+    "sourceUrl": "https://www.dallasfestivaloflights.com/",
+    "priceLabel": "See tickets",
+    "featured": true
+  },
+  {
+    "id": "dfwht-diwali-annakut-2026",
+    "title": "Diwali Deepotsav & Annakut",
+    "organizer": "DFW Hindu Temple Society (Ekta Mandir)",
+    "category": ["Spiritual", "Rituals", "Food/Free Feast"],
+    "startsAt": "2026-11-08T17:00:00-06:00",
+    "endsAt": "2026-11-08T21:00:00-06:00",
+    "venueName": "DFW Hindu Temple (Ekta Mandir)",
+    "address": "1605 N Britain Rd, Irving, TX 75061",
+    "lat": 32.8360,
+    "lng": -96.9565,
+    "heroEmoji": "🪔",
+    "gradient": ["#f59e0b", "#b91c1c"],
+    "description": "Celebrate Diwali with Lakshmi Puja, a dazzling display of diyas, and the Annakut offering of dozens of dishes to the deities. Prasad served to all. Families welcome.",
+    "itinerary": [
+      { "time": "5:00 PM", "activity": "Diya Lighting" },
+      { "time": "6:00 PM", "activity": "Lakshmi Puja" },
+      { "time": "7:00 PM", "activity": "Annakut Darshan" },
+      { "time": "8:00 PM", "activity": "Maha Aarti & Prasad" }
+    ],
+    "rsvpUrl": "https://www.dfwhindutemple.org/temple-calendar/",
+    "sourceUrl": "https://www.dfwhindutemple.org/temple-calendar/",
+    "priceLabel": "Free",
+    "featured": false
+  },
+  {
+    "id": "ats-lunar-new-year-2027",
+    "title": "Lunar New Year Festival 2027",
+    "organizer": "Asia Times Square",
+    "category": ["Live Music/Bhajan", "Kids Activities", "Food/Free Feast"],
+    "startsAt": "2027-02-06T11:00:00-06:00",
+    "endsAt": "2027-02-06T20:00:00-06:00",
+    "venueName": "Asia Times Square",
+    "address": "2625 W Pioneer Pkwy, Grand Prairie, TX 75051",
+    "lat": 32.7245,
+    "lng": -97.0330,
+    "heroEmoji": "🐉",
+    "gradient": ["#dc2626", "#f59e0b"],
+    "description": "Ring in the Year of the Goat at one of North Texas' largest Lunar New Year festivals — lion and dragon dances, live cultural performances, lantern crafts for kids, and an enormous Asian street-food bazaar.",
+    "itinerary": [
+      { "time": "11:00 AM", "activity": "Opening Lion Dance" },
+      { "time": "12:30 PM", "activity": "Cultural Performances" },
+      { "time": "2:00 PM", "activity": "Kids Lantern Craft" },
+      { "time": "4:00 PM", "activity": "Dragon Dance & Firecrackers" }
+    ],
+    "rsvpUrl": "https://asiatimessquare.com/events/lunarnewyear2026/",
+    "sourceUrl": "https://asiatimessquare.com/category/events/",
+    "priceLabel": "Free entry",
+    "featured": true
+  }
+];
+const CATS = ["Spiritual","Food/Free Feast","Kids Activities","Live Music/Bhajan","Rituals","Volunteer"];
+const CAT_ICON = {"Spiritual":"🕉️","Food/Free Feast":"🍲","Kids Activities":"🎈","Live Music/Bhajan":"🎶","Rituals":"🪔","Volunteer":"🤝"};
+const CAT_GRAD = {"Spiritual":["#6366f1","#9333ea"],"Food/Free Feast":["#f59e0b","#ea580c"],"Kids Activities":["#ec4899","#8b5cf6"],"Live Music/Bhajan":["#0ea5e9","#4f46e5"],"Rituals":["#f97316","#b91c1c"],"Volunteer":["#10b981","#0891b2"]};
+
+let state = { origin:{lat:32.7767,lng:-96.797,name:"Dallas, TX"}, radius:30, activeCats:new Set(), q:"", saved:new Set(JSON.parse(localStorageSafe()||"[]")), tab:"discover", showMap:false, current:null };
+function localStorageSafe(){ try{return null}catch(e){return null} } // storage APIs unsupported in artifacts; kept in-memory
+
+// ---------- helpers ----------
+function haversine(a,b){const R=3958.8,dLat=(b.lat-a.lat)*Math.PI/180,dLng=(b.lng-a.lng)*Math.PI/180,
+  la1=a.lat*Math.PI/180,la2=b.lat*Math.PI/180;
+  const h=Math.sin(dLat/2)**2+Math.cos(la1)*Math.cos(la2)*Math.sin(dLng/2)**2;return R*2*Math.asin(Math.sqrt(h));}
+function fmtDate(iso){const d=new Date(iso);return d.toLocaleDateString(undefined,{weekday:'short',month:'short',day:'numeric'});}
+function fmtTime(iso){const d=new Date(iso);return d.toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'});}
+function fmtWhen(e){return fmtDate(e.startsAt)+" · "+fmtTime(e.startsAt)+" – "+fmtTime(e.endsAt);}
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),2200);}
+function grad(e){return `linear-gradient(135deg,${e.gradient[0]},${e.gradient[1]})`;}
+
+// ---------- filtering ----------
+function filtered(){
+  return EVENTS.map(e=>({...e,dist:haversine(state.origin,e)}))
+    .filter(e=>e.dist<=state.radius)
+    .filter(e=>state.activeCats.size===0 || e.category.some(c=>state.activeCats.has(c)))
+    .filter(e=>{if(!state.q)return true;const q=state.q.toLowerCase();
+      return (e.title+e.organizer+e.venueName+e.address+e.category.join(' ')).toLowerCase().includes(q);})
+    .filter(e=>state.tab!=="saved" || state.saved.has(e.id))
+    .sort((a,b)=>a.dist-b.dist);
+}
+
+// ---------- render ----------
+function renderChips(){
+  const c=document.getElementById('chips');c.innerHTML='';
+  CATS.forEach(cat=>{
+    const b=document.createElement('button');
+    b.className='chip'+(state.activeCats.has(cat)?' on':'');
+    b.innerHTML=`${CAT_ICON[cat]} ${cat}`;
+    b.onclick=()=>{state.activeCats.has(cat)?state.activeCats.delete(cat):state.activeCats.add(cat);render();};
+    c.appendChild(b);
+  });
+}
+function eventCard(e){
+  const saved=state.saved.has(e.id);
+  const div=document.createElement('div');div.className='card';
+  div.innerHTML=`
+    <div class="hero" style="background:${grad(e)}">
+      <button class="fav" data-fav="${e.id}">${saved?'❤️':'🤍'}</button>
+      <span class="price">${e.priceLabel}</span>
+      <span class="emoji">${e.heroEmoji}</span>
+    </div>
+    <div class="body">
+      <div class="cats">${e.category.slice(0,3).map(c=>`<span class="cat">${c}</span>`).join('')}</div>
+      <h3>${e.title}</h3>
+      <div class="meta">
+        <div class="row">📅 <b>${fmtWhen(e)}</b></div>
+        <div class="row">📍 ${e.venueName} · <span class="dist">${e.dist.toFixed(1)} mi</span></div>
+      </div>
+    </div>`;
+  div.querySelector('.fav').onclick=(ev)=>{ev.stopPropagation();toggleSave(e.id);};
+  div.onclick=()=>openDetail(e.id);
+  return div;
+}
+function render(){
+  renderChips();
+  const list=filtered();
+  const feed=document.getElementById('feed');feed.innerHTML='';
+  document.getElementById('feedCount').textContent=list.length+' event'+(list.length!==1?'s':'');
+  document.getElementById('feedTitle').querySelector('h2').textContent =
+    state.tab==='saved'?'Saved events':'Upcoming near you';
+  if(list.length===0){
+    feed.innerHTML=`<div class="empty">${state.tab==='saved'?'No saved events yet — tap the heart on any event.':'No events match your filters. Try widening the radius or clearing filters.'}</div>`;
+  } else list.forEach(e=>feed.appendChild(eventCard(e)));
+  if(state.showMap) renderMap(list);
+  document.getElementById('locName').textContent=state.origin.name;
+  document.getElementById('radiusVal').textContent=state.radius+' mi';
+}
+function toggleSave(id){
+  state.saved.has(id)?state.saved.delete(id):state.saved.add(id);
+  toast(state.saved.has(id)?'Saved to bookmarks':'Removed from bookmarks');
+  if(state.current===id) document.getElementById('favBig').textContent=state.saved.has(id)?'❤️':'🤍';
+  render();
+}
+
+// ---------- map ----------
+let map,dmap,markers=[];
+function renderMap(list){
+  const el=document.getElementById('map');el.classList.remove('hidden');
+  if(typeof L==='undefined'){el.innerHTML='<div style="display:grid;place-items:center;height:100%;color:var(--muted);font-size:13px;">Map unavailable offline</div>';return;}
+  if(!map){map=L.map('map',{zoomControl:false}).setView([state.origin.lat,state.origin.lng],10);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap'}).addTo(map);}
+  markers.forEach(m=>map.removeLayer(m));markers=[];
+  L.circleMarker([state.origin.lat,state.origin.lng],{radius:7,color:'#2563eb',fillColor:'#3b82f6',fillOpacity:1}).addTo(map).bindPopup('You are here');
+  list.forEach(e=>{
+    const m=L.marker([e.lat,e.lng]).addTo(map).bindPopup(`<b>${e.heroEmoji} ${e.title}</b><br>${fmtDate(e.startsAt)} · ${e.venueName}`);
+    m.on('click',()=>setTimeout(()=>openDetail(e.id),400));markers.push(m);
+  });
+  setTimeout(()=>map.invalidateSize(),100);
+}
+
+// ---------- detail ----------
+function openDetail(id){
+  const e=EVENTS.find(x=>x.id===id);if(!e)return;state.current=id;
+  document.getElementById('dhero').style.background=grad(e);
+  document.getElementById('dEmoji').textContent=e.heroEmoji;
+  document.getElementById('dTitle').textContent=e.title;
+  document.getElementById('dOrg').innerHTML='by '+e.organizer+
+    (e.sourceUrl?`<br><a class="dsource" href="${e.sourceUrl}" target="_blank" rel="noreferrer">↗ View official page — confirm exact date &amp; time</a>`:'');
+  document.getElementById('dCats').innerHTML=e.category.map(c=>`<span class="cat">${CAT_ICON[c]||''} ${c}</span>`).join('');
+  document.getElementById('dWhen').textContent=fmtWhen(e);
+  document.getElementById('dWhere').textContent=e.venueName+' · '+e.address;
+  document.getElementById('dPrice').textContent=e.priceLabel;
+  document.getElementById('dDesc').textContent=e.description;
+  document.getElementById('dItin').innerHTML=e.itinerary.map(s=>`<div class="step"><div class="time">${s.time}</div><div class="act">${s.activity}</div></div>`).join('');
+  document.getElementById('favBig').textContent=state.saved.has(id)?'❤️':'🤍';
+  const sheet=document.getElementById('sheet');sheet.classList.add('open');sheet.scrollTop=0;
+  setTimeout(()=>{
+    if(typeof L==='undefined'){document.getElementById('dmap').innerHTML='<div style="display:grid;place-items:center;height:100%;color:var(--muted);font-size:13px;">Map unavailable offline</div>';return;}
+    if(dmap){dmap.remove();dmap=null;}
+    dmap=L.map('dmap',{zoomControl:false,dragging:true}).setView([e.lat,e.lng],14);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OSM'}).addTo(dmap);
+    L.marker([e.lat,e.lng]).addTo(dmap);setTimeout(()=>dmap.invalidateSize(),50);
+  },300);
+  // wire actions
+  document.getElementById('rsvpBtn').onclick=()=>{toast('Opening RSVP…');window.open(e.rsvpUrl,'_blank');};
+  document.getElementById('dirBtn').onclick=()=>window.open(`https://www.google.com/maps/dir/?api=1&destination=${e.lat},${e.lng}`,'_blank');
+  document.getElementById('calBtn').onclick=()=>downloadICS(e);
+  document.getElementById('shareBtn').onclick=()=>shareEvent(e);
+  document.getElementById('favBig').onclick=()=>toggleSave(id);
+}
+function closeDetail(){document.getElementById('sheet').classList.remove('open');state.current=null;}
+
+// ---------- calendar (.ics) ----------
+function pad(n){return String(n).padStart(2,'0');}
+function icsDate(iso){const d=new Date(iso);return d.getUTCFullYear()+pad(d.getUTCMonth()+1)+pad(d.getUTCDate())+'T'+pad(d.getUTCHours())+pad(d.getUTCMinutes())+'00Z';}
+function downloadICS(e){
+  const ics=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//HeritageHub//EN','BEGIN:VEVENT',
+    'UID:'+e.id+'@heritagehub','DTSTAMP:'+icsDate(new Date().toISOString()),
+    'DTSTART:'+icsDate(e.startsAt),'DTEND:'+icsDate(e.endsAt),
+    'SUMMARY:'+e.title,'LOCATION:'+e.venueName+', '+e.address,
+    'DESCRIPTION:'+e.description.replace(/\n/g,' '),'END:VEVENT','END:VCALENDAR'].join('\r\n');
+  const blob=new Blob([ics],{type:'text/calendar'});const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download=e.id+'.ics';a.click();URL.revokeObjectURL(url);
+  toast('📆 Event added to calendar (.ics)');
+}
+// ---------- share ----------
+async function shareEvent(e){
+  const text=`${e.title}\n${fmtWhen(e)}\n${e.venueName}, ${e.address}`;
+  if(navigator.share){try{await navigator.share({title:e.title,text});return;}catch(err){}}
+  try{await navigator.clipboard.writeText(text);toast('🔗 Event details copied to clipboard');}
+  catch(err){toast('Sharing not available in this preview');}
+}
+
+// ---------- geolocation ----------
+function useMyLocation(){
+  if(!navigator.geolocation){toast('Geolocation not supported');return;}
+  toast('Getting your location…');
+  navigator.geolocation.getCurrentPosition(
+    p=>{state.origin={lat:p.coords.latitude,lng:p.coords.longitude,name:'Your location'};
+      if(map)map.setView([state.origin.lat,state.origin.lng],10);render();toast('📍 Updated to your location');},
+    err=>toast('Location permission denied — showing Dallas, TX'));
+}
+
+// ---------- theme ----------
+function toggleTheme(){
+  const cur=document.documentElement.getAttribute('data-theme');
+  const next=cur==='dark'?'light':'dark';
+  document.documentElement.setAttribute('data-theme',next);
+  document.getElementById('themeBtn').textContent=next==='dark'?'☀️':'🌙';
+}
+
+// ---------- wire up ----------
+document.getElementById('searchInput').oninput=e=>{state.q=e.target.value;render();};
+document.getElementById('radius').oninput=e=>{state.radius=+e.target.value;render();};
+document.getElementById('useLoc').onclick=useMyLocation;
+document.getElementById('themeBtn').onclick=toggleTheme;
+document.getElementById('bookmarksBtn').onclick=()=>{setTab('saved');};
+document.getElementById('backBtn').onclick=closeDetail;
+document.getElementById('mapToggle').onclick=()=>{
+  state.showMap=!state.showMap;
+  document.getElementById('map').classList.toggle('hidden',!state.showMap);
+  document.querySelector('#mapToggle span').textContent=state.showMap?'Hide map view':'Show map view';
+  if(state.showMap)render();
+};
+document.getElementById('installBtn').onclick=()=>toast('On your phone: tap Share → “Add to Home Screen” to install.');
+document.getElementById('installX').onclick=()=>document.getElementById('installBanner').classList.add('hidden');
+function setTab(tab){
+  state.tab=tab;
+  document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('on',b.dataset.tab===tab));
+  if(tab==='map'){state.showMap=true;document.getElementById('map').classList.remove('hidden');
+    document.querySelector('#mapToggle span').textContent='Hide map view';}
+  if(tab==='profile'){toast('Profile & sign-in — coming in Phase 1.5');state.tab='discover';
+    document.querySelector('.nav button[data-tab=discover]').classList.add('on');
+    document.querySelector('.nav button[data-tab=profile]').classList.remove('on');}
+  render();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+document.querySelectorAll('.nav button').forEach(b=>b.onclick=()=>setTab(b.dataset.tab));
+
+render();
+</script>
+</body>
+</html>

@@ -1,0 +1,20 @@
+{
+  "name": "HeritageHub — Local Heritage Events",
+  "short_name": "HeritageHub",
+  "description": "Discover, share, and RSVP to local cultural, spiritual, and community heritage events near you.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#faf7f2",
+  "theme_color": "#b91c1c",
+  "categories": ["lifestyle", "social", "events"],
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Discover events", "url": "/", "description": "Browse events near you" }
+  ]
+}

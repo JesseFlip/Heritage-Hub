@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>HeritageHub — Organizer Guide / How to Add an Event</title>
+<style>
+  :root{--bg:#faf7f2;--surface:#fff;--surface2:#f4efe7;--text:#1c1917;--muted:#78716c;
+    --border:#e7e1d6;--brand:#b91c1c;--brand2:#f97316;--accent:#7c3aed;--ok:#15803d;
+    --shadow:0 1px 2px rgba(28,25,23,.06),0 10px 30px rgba(28,25,23,.10);}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans",Arial,sans-serif;
+    background:var(--bg);color:var(--text);line-height:1.6;padding-bottom:60px}
+  .wrap{max-width:760px;margin:0 auto;padding:0 18px}
+  header.hero{background:linear-gradient(135deg,var(--brand),var(--brand2));color:#fff;
+    padding:34px 0 28px;box-shadow:var(--shadow)}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:18px}
+  .brand .logo{width:34px;height:34px;border-radius:10px;background:rgba(255,255,255,.2);
+    display:grid;place-items:center;font-size:19px}
+  h1{font-size:30px;font-weight:800;letter-spacing:-.02em;margin-top:16px;line-height:1.2}
+  .sub{opacity:.95;margin-top:6px;font-size:16px;max-width:52ch}
+  /* language bar */
+  .langbar{position:sticky;top:0;z-index:10;background:color-mix(in srgb,var(--bg) 92%,transparent);
+    backdrop-filter:blur(10px);border-bottom:1px solid var(--border);padding:10px 0}
+  .langpills{display:flex;gap:8px;overflow-x:auto;padding:0 18px;max-width:760px;margin:0 auto;
+    scrollbar-width:none}
+  .langpills::-webkit-scrollbar{display:none}
+  .langpills button{white-space:nowrap;border:1px solid var(--border);background:var(--surface);
+    color:var(--muted);font-weight:700;font-size:14px;padding:8px 14px;border-radius:999px;cursor:pointer}
+  .langpills button.on{background:var(--brand);color:#fff;border-color:var(--brand)}
+  /* steps */
+  section{margin-top:26px}
+  .steps{display:flex;flex-direction:column;gap:14px;margin-top:14px}
+  .step{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:18px;
+    display:flex;gap:16px;box-shadow:var(--shadow)}
+  .step .num{flex-shrink:0;width:40px;height:40px;border-radius:12px;
+    background:linear-gradient(135deg,var(--brand),var(--brand2));color:#fff;font-weight:800;
+    font-size:18px;display:grid;place-items:center}
+  .step .emoji{font-size:22px}
+  .step h3{font-size:17px;font-weight:750;margin-bottom:3px}
+  .step p{color:var(--muted);font-size:15px}
+  h2{font-size:20px;font-weight:800;margin-bottom:2px}
+  .tips,.faqs{margin-top:14px;display:flex;flex-direction:column;gap:10px}
+  .tip{background:var(--surface2);border-radius:12px;padding:13px 16px;font-size:15px;display:flex;gap:10px}
+  .faq{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 16px}
+  .faq .q{font-weight:750;font-size:15px}
+  .faq .a{color:var(--muted);font-size:14.5px;margin-top:3px}
+  footer{margin-top:34px;padding-top:18px;border-top:1px solid var(--border);color:var(--muted);font-size:14px}
+  .flag{font-size:16px}
+  /* RTL */
+  [dir="rtl"] .step{flex-direction:row}
+  [dir="rtl"] .langpills{direction:rtl}
+</style>
+</head>
+<body>
+<header class="hero">
+  <div class="wrap">
+    <div class="brand"><span class="logo">🪷</span> HeritageHub</div>
+    <h1 id="h-title">How to add your event</h1>
+    <p class="sub" id="h-sub">A quick guide for community organizers — it takes about 3 minutes.</p>
+  </div>
+</header>
+
+<div class="langbar">
+  <div class="langpills" id="langpills"></div>
+</div>
+
+<main class="wrap">
+  <section>
+    <div class="steps" id="steps"></div>
+  </section>
+  <section>
+    <h2 id="tips-title">Tips</h2>
+    <div class="tips" id="tips"></div>
+  </section>
+  <section>
+    <h2 id="faq-title">Frequently asked questions</h2>
+    <div class="faqs" id="faqs"></div>
+  </section>
+  <footer id="footer"></footer>
+</main>
+
+<script>
+const LANGS = [
+  {code:"en", name:"English", flag:"🇺🇸", rtl:false},
+  {code:"es", name:"Español", flag:"🇪🇸", rtl:false},
+  {code:"hi", name:"हिन्दी", flag:"🇮🇳", rtl:false},
+  {code:"gu", name:"ગુજરાતી", flag:"🇮🇳", rtl:false},
+  {code:"pa", name:"ਪੰਜਾਬੀ", flag:"🇮🇳", rtl:false},
+  {code:"zh", name:"中文", flag:"🇨🇳", rtl:false},
+  {code:"vi", name:"Tiếng Việt", flag:"🇻🇳", rtl:false},
+  {code:"ar", name:"العربية", flag:"🇸🇦", rtl:true},
+];
+
+const ICONS = ["📲","✉️","✏️","📅","📍","🎉"];
+
+const C = {
+  en:{title:"How to add your event",sub:"A quick guide for community organizers — it takes about 3 minutes.",
+    steps:[
+      {t:"Open the app",b:"On the home screen, tap the ‘add an event’ link in the notice near the top."},
+      {t:"Sign in with your email",b:"Type your email and tap ‘Email me a sign-in link.’ Open the email and tap the link to return — no password needed."},
+      {t:"The basics",b:"Give your event a clear name, add who is hosting, and tap all the categories that fit."},
+      {t:"Date & time",b:"Pick the day and the start and end times your event runs."},
+      {t:"Location",b:"Type the venue name and full address, then tap ‘Find on map’ to drop the pin."},
+      {t:"Publish",b:"Add a description, admission price, your official link, and an optional schedule. Then tap ‘Publish event’ — you’re done!"},
+    ],
+    tipsTitle:"Tips",tips:[
+      "Add your official page link so families can confirm the details.",
+      "Free events are welcome — just write ‘Free’ for admission.",
+      "A clear title and a few good details help more people come."],
+    faqTitle:"Frequently asked questions",faqs:[
+      {q:"Is it free to post?",a:"Yes. Listing your community event on HeritageHub is completely free."},
+      {q:"Who can see my event?",a:"Anyone nearby searching HeritageHub will see it, sorted by distance."},
+      {q:"Can I edit it later?",a:"Yes — sign in with the same email to manage your events."}],
+    footer:"Need help? Reply to your community’s email and we’ll help you post."},
+
+  es:{title:"Cómo publicar tu evento",sub:"Una guía rápida para organizadores comunitarios — toma unos 3 minutos.",
+    steps:[
+      {t:"Abre la app",b:"En la pantalla de inicio, toca el enlace ‘add an event’ en el aviso de la parte superior."},
+      {t:"Inicia sesión con tu correo",b:"Escribe tu correo y toca ‘Email me a sign-in link’. Abre el correo y toca el enlace para volver — sin contraseña."},
+      {t:"Lo básico",b:"Ponle un nombre claro a tu evento, indica quién lo organiza y toca todas las categorías que correspondan."},
+      {t:"Fecha y hora",b:"Elige el día y las horas de inicio y fin de tu evento."},
+      {t:"Ubicación",b:"Escribe el nombre del lugar y la dirección completa, luego toca ‘Find on map’ para colocar el pin."},
+      {t:"Publica",b:"Añade una descripción, el precio de entrada, tu enlace oficial y un horario opcional. Luego toca ‘Publish event’. ¡Listo!"},
+    ],
+    tipsTitle:"Consejos",tips:[
+      "Añade el enlace de tu página oficial para que las familias confirmen los detalles.",
+      "Los eventos gratuitos son bienvenidos — solo escribe ‘Free’ en la entrada.",
+      "Un título claro y buenos detalles ayudan a que asista más gente."],
+    faqTitle:"Preguntas frecuentes",faqs:[
+      {q:"¿Publicar es gratis?",a:"Sí. Publicar tu evento comunitario en HeritageHub es totalmente gratis."},
+      {q:"¿Quién puede ver mi evento?",a:"Cualquier persona cercana que busque en HeritageHub lo verá, ordenado por distancia."},
+      {q:"¿Puedo editarlo después?",a:"Sí — inicia sesión con el mismo correo para gestionar tus eventos."}],
+    footer:"¿Necesitas ayuda? Responde al correo de tu comunidad y te ayudamos a publicar."},
+
+  hi:{title:"अपना कार्यक्रम कैसे जोड़ें",sub:"समुदाय आयोजकों के लिए एक त्वरित गाइड — इसमें लगभग 3 मिनट लगते हैं।",
+    steps:[
+      {t:"ऐप खोलें",b:"होम स्क्रीन पर, ऊपर दी गई सूचना में ‘add an event’ लिंक पर टैप करें।"},
+      {t:"अपने ईमेल से साइन इन करें",b:"अपना ईमेल लिखें और ‘Email me a sign-in link’ पर टैप करें। ईमेल खोलें और लिंक पर टैप करके वापस आएं — पासवर्ड की ज़रूरत नहीं।"},
+      {t:"बुनियादी जानकारी",b:"अपने कार्यक्रम को स्पष्ट नाम दें, आयोजक का नाम जोड़ें, और सभी उपयुक्त श्रेणियाँ चुनें।"},
+      {t:"तारीख और समय",b:"दिन और कार्यक्रम के शुरू व समाप्त होने का समय चुनें।"},
+      {t:"स्थान",b:"स्थान का नाम और पूरा पता लिखें, फिर पिन लगाने के लिए ‘Find on map’ पर टैप करें।"},
+      {t:"प्रकाशित करें",b:"विवरण, प्रवेश शुल्क, अपना आधिकारिक लिंक और वैकल्पिक कार्यक्रम-सूची जोड़ें। फिर ‘Publish event’ पर टैप करें — हो गया!"},
+    ],
+    tipsTitle:"सुझाव",tips:[
+      "अपने आधिकारिक पेज का लिंक जोड़ें ताकि परिवार विवरण की पुष्टि कर सकें।",
+      "नि:शुल्क कार्यक्रमों का स्वागत है — प्रवेश में बस ‘Free’ लिखें।",
+      "स्पष्ट शीर्षक और अच्छे विवरण अधिक लोगों को आने में मदद करते हैं।"],
+    faqTitle:"अक्सर पूछे जाने वाले प्रश्न",faqs:[
+      {q:"क्या पोस्ट करना नि:शुल्क है?",a:"हाँ। HeritageHub पर अपना सामुदायिक कार्यक्रम सूचीबद्ध करना पूरी तरह नि:शुल्क है।"},
+      {q:"मेरा कार्यक्रम कौन देख सकता है?",a:"आस-पास HeritageHub पर खोज करने वाला कोई भी व्यक्ति इसे दूरी के अनुसार देखेगा।"},
+      {q:"क्या मैं बाद में बदल सकता हूँ?",a:"हाँ — अपने कार्यक्रम प्रबंधित करने के लिए उसी ईमेल से साइन इन करें।"}],
+    footer:"मदद चाहिए? अपने समुदाय के ईमेल पर उत्तर दें, हम आपकी मदद करेंगे।"},
+
+  gu:{title:"તમારો કાર્યક્રમ કેવી રીતે ઉમેરવો",sub:"સમુદાય આયોજકો માટે ઝડપી માર્ગદર્શિકા — લગભગ 3 મિનિટ લાગે છે.",
+    steps:[
+      {t:"એપ ખોલો",b:"હોમ સ્ક્રીન પર, ઉપરના સૂચનમાં ‘add an event’ લિંક પર ટૅપ કરો."},
+      {t:"તમારા ઇમેલથી સાઇન ઇન કરો",b:"તમારો ઇમેલ લખો અને ‘Email me a sign-in link’ પર ટૅપ કરો. ઇમેલ ખોલો અને લિંક પર ટૅપ કરીને પાછા આવો — પાસવર્ડની જરૂર નથી."},
+      {t:"મૂળભૂત માહિતી",b:"તમારા કાર્યક્રમને સ્પષ્ટ નામ આપો, આયોજકનું નામ ઉમેરો, અને બધી યોગ્ય શ્રેણીઓ પસંદ કરો."},
+      {t:"તારીખ અને સમય",b:"દિવસ અને કાર્યક્રમના શરૂ તથા સમાપ્તિ સમય પસંદ કરો."},
+      {t:"સ્થળ",b:"સ્થળનું નામ અને પૂરો સરનામું લખો, પછી પિન મૂકવા ‘Find on map’ પર ટૅપ કરો."},
+      {t:"પ્રકાશિત કરો",b:"વર્ણન, પ્રવેશ ફી, તમારી અધિકૃત લિંક અને વૈકલ્પિક યાદી ઉમેરો. પછી ‘Publish event’ પર ટૅપ કરો — થઈ ગયું!"},
+    ],
+    tipsTitle:"સૂચનો",tips:[
+      "કુટુંબો વિગતોની ખાતરી કરી શકે તે માટે તમારી અધિકૃત પેજની લિંક ઉમેરો.",
+      "મફત કાર્યક્રમો આવકાર્ય છે — પ્રવેશમાં ફક્ત ‘Free’ લખો.",
+      "સ્પષ્ટ શીર્ષક અને સારી વિગતો વધુ લોકોને આવવામાં મદદ કરે છે."],
+    faqTitle:"વારંવાર પૂછાતા પ્રશ્નો",faqs:[
+      {q:"પોસ્ટ કરવું મફત છે?",a:"હા. HeritageHub પર તમારો સામુદાયિક કાર્યક્રમ યાદી કરવો સંપૂર્ણ મફત છે."},
+      {q:"મારો કાર્યક્રમ કોણ જોઈ શકે?",a:"નજીકમાં HeritageHub પર શોધ કરનાર કોઈપણ તેને અંતર પ્રમાણે જોશે."},
+      {q:"શું હું પછીથી બદલી શકું?",a:"હા — તમારા કાર્યક્રમો સંચાલિત કરવા એ જ ઇમેલથી સાઇન ઇન કરો."}],
+    footer:"મદદ જોઈએ? તમારા સમુદાયના ઇમેલનો જવાબ આપો, અમે મદદ કરીશું."},
+
+  pa:{title:"ਆਪਣਾ ਸਮਾਗਮ ਕਿਵੇਂ ਸ਼ਾਮਲ ਕਰੋ",sub:"ਭਾਈਚਾਰਕ ਪ੍ਰਬੰਧਕਾਂ ਲਈ ਇੱਕ ਤੇਜ਼ ਗਾਈਡ — ਲਗਭਗ 3 ਮਿੰਟ ਲੱਗਦੇ ਹਨ।",
+    steps:[
+      {t:"ਐਪ ਖੋਲ੍ਹੋ",b:"ਹੋਮ ਸਕ੍ਰੀਨ ਉੱਤੇ, ਉੱਪਰ ਦਿੱਤੀ ਸੂਚਨਾ ਵਿੱਚ ‘add an event’ ਲਿੰਕ ਉੱਤੇ ਟੈਪ ਕਰੋ।"},
+      {t:"ਆਪਣੇ ਈਮੇਲ ਨਾਲ ਸਾਈਨ ਇਨ ਕਰੋ",b:"ਆਪਣਾ ਈਮੇਲ ਲਿਖੋ ਅਤੇ ‘Email me a sign-in link’ ਉੱਤੇ ਟੈਪ ਕਰੋ। ਈਮੇਲ ਖੋਲ੍ਹੋ ਅਤੇ ਲਿੰਕ ਉੱਤੇ ਟੈਪ ਕਰਕੇ ਵਾਪਸ ਆਓ — ਪਾਸਵਰਡ ਦੀ ਲੋੜ ਨਹੀਂ।"},
+      {t:"ਮੁੱਢਲੀ ਜਾਣਕਾਰੀ",b:"ਆਪਣੇ ਸਮਾਗਮ ਨੂੰ ਸਾਫ਼ ਨਾਮ ਦਿਓ, ਪ੍ਰਬੰਧਕ ਦਾ ਨਾਮ ਸ਼ਾਮਲ ਕਰੋ, ਅਤੇ ਸਾਰੀਆਂ ਢੁਕਵੀਆਂ ਸ਼੍ਰੇਣੀਆਂ ਚੁਣੋ।"},
+      {t:"ਤਾਰੀਖ ਅਤੇ ਸਮਾਂ",b:"ਦਿਨ ਅਤੇ ਸਮਾਗਮ ਦੇ ਸ਼ੁਰੂ ਤੇ ਖ਼ਤਮ ਹੋਣ ਦਾ ਸਮਾਂ ਚੁਣੋ।"},
+      {t:"ਟਿਕਾਣਾ",b:"ਥਾਂ ਦਾ ਨਾਮ ਅਤੇ ਪੂਰਾ ਪਤਾ ਲਿਖੋ, ਫਿਰ ਪਿੰਨ ਲਾਉਣ ਲਈ ‘Find on map’ ਉੱਤੇ ਟੈਪ ਕਰੋ।"},
+      {t:"ਪ੍ਰਕਾਸ਼ਿਤ ਕਰੋ",b:"ਵੇਰਵਾ, ਦਾਖਲਾ ਫੀਸ, ਆਪਣਾ ਅਧਿਕਾਰਤ ਲਿੰਕ ਅਤੇ ਵਿਕਲਪਿਕ ਸੂਚੀ ਸ਼ਾਮਲ ਕਰੋ। ਫਿਰ ‘Publish event’ ਉੱਤੇ ਟੈਪ ਕਰੋ — ਹੋ ਗਿਆ!"},
+    ],
+    tipsTitle:"ਸੁਝਾਅ",tips:[
+      "ਆਪਣੀ ਅਧਿਕਾਰਤ ਪੇਜ ਦਾ ਲਿੰਕ ਸ਼ਾਮਲ ਕਰੋ ਤਾਂ ਜੋ ਪਰਿਵਾਰ ਵੇਰਵੇ ਦੀ ਪੁਸ਼ਟੀ ਕਰ ਸਕਣ।",
+      "ਮੁਫ਼ਤ ਸਮਾਗਮਾਂ ਦਾ ਸਵਾਗਤ ਹੈ — ਦਾਖਲੇ ਵਿੱਚ ਸਿਰਫ਼ ‘Free’ ਲਿਖੋ।",
+      "ਸਾਫ਼ ਸਿਰਲੇਖ ਅਤੇ ਵਧੀਆ ਵੇਰਵੇ ਵੱਧ ਲੋਕਾਂ ਨੂੰ ਆਉਣ ਵਿੱਚ ਮਦਦ ਕਰਦੇ ਹਨ।"],
+    faqTitle:"ਆਮ ਸਵਾਲ",faqs:[
+      {q:"ਕੀ ਪੋਸਟ ਕਰਨਾ ਮੁਫ਼ਤ ਹੈ?",a:"ਹਾਂ। HeritageHub ਉੱਤੇ ਆਪਣਾ ਭਾਈਚਾਰਕ ਸਮਾਗਮ ਦਰਜ ਕਰਨਾ ਪੂਰੀ ਤਰ੍ਹਾਂ ਮੁਫ਼ਤ ਹੈ।"},
+      {q:"ਮੇਰਾ ਸਮਾਗਮ ਕੌਣ ਦੇਖ ਸਕਦਾ ਹੈ?",a:"ਨੇੜੇ HeritageHub ਉੱਤੇ ਖੋਜ ਕਰਨ ਵਾਲਾ ਕੋਈ ਵੀ ਇਸਨੂੰ ਦੂਰੀ ਅਨੁਸਾਰ ਦੇਖੇਗਾ।"},
+      {q:"ਕੀ ਮੈਂ ਬਾਅਦ ਵਿੱਚ ਸੋਧ ਸਕਦਾ ਹਾਂ?",a:"ਹਾਂ — ਆਪਣੇ ਸਮਾਗਮ ਪ੍ਰਬੰਧਿਤ ਕਰਨ ਲਈ ਉਸੇ ਈਮੇਲ ਨਾਲ ਸਾਈਨ ਇਨ ਕਰੋ।"}],
+    footer:"ਮਦਦ ਚਾਹੀਦੀ ਹੈ? ਆਪਣੇ ਭਾਈਚਾਰੇ ਦੇ ਈਮੇਲ ਦਾ ਜਵਾਬ ਦਿਓ, ਅਸੀਂ ਮਦਦ ਕਰਾਂਗੇ।"},
+
+  zh:{title:"如何添加您的活动",sub:"为社区组织者准备的快速指南 — 大约需要 3 分钟。",
+    steps:[
+      {t:"打开应用",b:"在主屏幕上，点按顶部提示中的 ‘add an event’（添加活动）链接。"},
+      {t:"用邮箱登录",b:"输入您的电子邮箱，点按 ‘Email me a sign-in link’。打开邮件并点按链接返回 — 无需密码。"},
+      {t:"基本信息",b:"为活动取一个清晰的名称，填写主办方名称，并选择所有相关类别。"},
+      {t:"日期和时间",b:"选择活动的日期以及开始和结束时间。"},
+      {t:"地点",b:"输入场地名称和完整地址，然后点按 ‘Find on map’ 放置地图标记。"},
+      {t:"发布",b:"添加简介、入场费、您的官方链接和可选的活动流程，然后点按 ‘Publish event’ — 完成！"},
+    ],
+    tipsTitle:"小提示",tips:[
+      "添加您的官方页面链接，方便大家核实详情。",
+      "欢迎免费活动 — 入场费填写 ‘Free’ 即可。",
+      "清晰的标题和精彩的细节能吸引更多人参加。"],
+    faqTitle:"常见问题",faqs:[
+      {q:"发布是免费的吗？",a:"是的。在 HeritageHub 上发布您的社区活动完全免费。"},
+      {q:"谁能看到我的活动？",a:"附近使用 HeritageHub 搜索的任何人都能看到，并按距离排序。"},
+      {q:"我之后可以修改吗？",a:"可以 — 用同一邮箱登录即可管理您的活动。"}],
+    footer:"需要帮助？请回复您所在社区的邮件，我们会协助您发布。"},
+
+  vi:{title:"Cách thêm sự kiện của bạn",sub:"Hướng dẫn nhanh cho người tổ chức cộng đồng — chỉ mất khoảng 3 phút.",
+    steps:[
+      {t:"Mở ứng dụng",b:"Trên màn hình chính, chạm vào liên kết ‘add an event’ (thêm sự kiện) trong thông báo ở phía trên."},
+      {t:"Đăng nhập bằng email",b:"Nhập email của bạn và chạm ‘Email me a sign-in link’. Mở email và chạm vào liên kết để quay lại — không cần mật khẩu."},
+      {t:"Thông tin cơ bản",b:"Đặt tên rõ ràng cho sự kiện, thêm tên đơn vị tổ chức và chọn tất cả danh mục phù hợp."},
+      {t:"Ngày và giờ",b:"Chọn ngày cùng giờ bắt đầu và kết thúc sự kiện."},
+      {t:"Địa điểm",b:"Nhập tên địa điểm và địa chỉ đầy đủ, sau đó chạm ‘Find on map’ để đặt ghim."},
+      {t:"Đăng",b:"Thêm mô tả, phí vào cửa, liên kết chính thức và lịch trình tùy chọn. Sau đó chạm ‘Publish event’ — xong!"},
+    ],
+    tipsTitle:"Mẹo",tips:[
+      "Thêm liên kết trang chính thức để mọi người xác nhận thông tin.",
+      "Chào đón sự kiện miễn phí — chỉ cần ghi ‘Free’ ở phần vào cửa.",
+      "Tiêu đề rõ ràng và chi tiết hấp dẫn giúp thu hút nhiều người hơn."],
+    faqTitle:"Câu hỏi thường gặp",faqs:[
+      {q:"Đăng có miễn phí không?",a:"Có. Đăng sự kiện cộng đồng của bạn trên HeritageHub hoàn toàn miễn phí."},
+      {q:"Ai có thể thấy sự kiện của tôi?",a:"Bất kỳ ai ở gần tìm kiếm trên HeritageHub đều thấy, sắp xếp theo khoảng cách."},
+      {q:"Tôi có thể chỉnh sửa sau không?",a:"Có — đăng nhập bằng cùng email để quản lý sự kiện của bạn."}],
+    footer:"Cần trợ giúp? Hãy trả lời email của cộng đồng bạn, chúng tôi sẽ hỗ trợ."},
+
+  ar:{title:"كيفية إضافة فعاليتك",sub:"دليل سريع لمنظِّمي فعاليات المجتمع — يستغرق حوالي 3 دقائق.",
+    steps:[
+      {t:"افتح التطبيق",b:"في الشاشة الرئيسية، انقر على رابط ‘add an event’ (إضافة فعالية) في الإشعار بالأعلى."},
+      {t:"سجّل الدخول ببريدك الإلكتروني",b:"اكتب بريدك الإلكتروني وانقر ‘Email me a sign-in link’. افتح البريد وانقر على الرابط للعودة — بدون كلمة مرور."},
+      {t:"المعلومات الأساسية",b:"امنح فعاليتك اسمًا واضحًا، وأضف اسم الجهة المنظِّمة، واختر كل الفئات المناسبة."},
+      {t:"التاريخ والوقت",b:"اختر اليوم ووقت بداية ونهاية الفعالية."},
+      {t:"الموقع",b:"اكتب اسم المكان والعنوان الكامل، ثم انقر ‘Find on map’ لوضع العلامة على الخريطة."},
+      {t:"انشر",b:"أضف وصفًا، ورسوم الدخول، ورابطك الرسمي، وجدولًا اختياريًا. ثم انقر ‘Publish event’ — تم!"},
+    ],
+    tipsTitle:"نصائح",tips:[
+      "أضف رابط صفحتك الرسمية ليتمكن الجميع من تأكيد التفاصيل.",
+      "الفعاليات المجانية مرحّب بها — فقط اكتب ‘Free’ في رسوم الدخول.",
+      "العنوان الواضح والتفاصيل الجيدة تساعد على حضور عدد أكبر."],
+    faqTitle:"الأسئلة الشائعة",faqs:[
+      {q:"هل النشر مجاني؟",a:"نعم. إدراج فعاليتك المجتمعية على HeritageHub مجاني تمامًا."},
+      {q:"من يمكنه رؤية فعاليتي؟",a:"أي شخص قريب يبحث في HeritageHub سيراها، مرتّبة حسب المسافة."},
+      {q:"هل يمكنني تعديلها لاحقًا؟",a:"نعم — سجّل الدخول بنفس البريد لإدارة فعالياتك."}],
+    footer:"تحتاج مساعدة؟ رد على بريد مجتمعك وسنساعدك على النشر."},
+};
+
+function render(code){
+  const d = C[code];
+  const lang = LANGS.find(l=>l.code===code);
+  document.documentElement.lang = code;
+  document.documentElement.dir = lang.rtl ? "rtl" : "ltr";
+  document.getElementById("h-title").textContent = d.title;
+  document.getElementById("h-sub").textContent = d.sub;
+  document.getElementById("steps").innerHTML = d.steps.map((s,i)=>`
+    <div class="step">
+      <div class="num">${i+1}</div>
+      <div><h3><span class="emoji">${ICONS[i]}</span> ${s.t}</h3><p>${s.b}</p></div>
+    </div>`).join("");
+  document.getElementById("tips-title").textContent = d.tipsTitle;
+  document.getElementById("tips").innerHTML = d.tips.map(t=>`<div class="tip"><span>💡</span><span>${t}</span></div>`).join("");
+  document.getElementById("faq-title").textContent = d.faqTitle;
+  document.getElementById("faqs").innerHTML = d.faqs.map(f=>`<div class="faq"><div class="q">${f.q}</div><div class="a">${f.a}</div></div>`).join("");
+  document.getElementById("footer").textContent = d.footer;
+  [...document.querySelectorAll(".langpills button")].forEach(b=>b.classList.toggle("on",b.dataset.c===code));
+}
+
+const bar = document.getElementById("langpills");
+bar.innerHTML = LANGS.map(l=>`<button data-c="${l.code}"><span class="flag">${l.flag}</span> ${l.name}</button>`).join("");
+[...bar.querySelectorAll("button")].forEach(b=>b.onclick=()=>render(b.dataset.c));
+render("en");
+</script>
+</body>
+</html>

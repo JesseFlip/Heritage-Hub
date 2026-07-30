@@ -1,0 +1,55 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg: #faf7f2;
+  --surface: #ffffff;
+  --surface-2: #f4efe7;
+  --text: #1c1917;
+  --muted: #78716c;
+  --border: #e7e1d6;
+}
+.dark {
+  --bg: #14110e;
+  --surface: #1f1b16;
+  --surface-2: #2a241d;
+  --text: #f5f0e8;
+  --muted: #a8a29e;
+  --border: #352e25;
+}
+
+html,
+body {
+  background: var(--bg);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+}
+
+@layer components {
+  .surface {
+    background: var(--surface);
+    border: 1px solid var(--border);
+  }
+  .muted {
+    color: var(--muted);
+  }
+  .cat-pill {
+    @apply text-[10.5px] font-bold uppercase tracking-wide px-2 py-[3px] rounded-md;
+    background: var(--surface-2);
+    color: var(--muted);
+  }
+}
+
+/* Leaflet marker fix inside bundlers */
+.leaflet-container {
+  font: inherit;
+  z-index: 1;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
