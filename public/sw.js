@@ -1,10 +1,14 @@
 /* HeritageHub service worker — offline support for saved/RSVP'd events. */
-const VERSION = "hh-v1";
+const VERSION = "hh-v2";
 const APP_SHELL = `${VERSION}-shell`;
 const RUNTIME = `${VERSION}-runtime`;
 const TILES = `${VERSION}-tiles`;
 
-const SHELL_URLS = ["/", "/manifest.webmanifest"];
+// Derive the app's base path (e.g. "/Heritage-Hub/") from this script's own
+// URL so the same file works whether it's served from the domain root or a
+// GitHub Pages project sub-path — no build-time templating needed.
+const BASE = new URL(".", self.location.href).pathname;
+const SHELL_URLS = [BASE, `${BASE}manifest.webmanifest`];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(caches.open(APP_SHELL).then((c) => c.addAll(SHELL_URLS)).then(() => self.skipWaiting()));
@@ -46,7 +50,7 @@ self.addEventListener("fetch", (event) => {
           caches.open(RUNTIME).then((c) => c.put(request, res.clone()));
           return res;
         })
-        .catch(() => caches.match(request).then((r) => r || caches.match("/")))
+        .catch(() => caches.match(request).then((r) => r || caches.match(BASE)))
     );
     return;
   }
@@ -78,14 +82,14 @@ self.addEventListener("push", (event) => {
   event.waitUntil(
     self.registration.showNotification(title, {
       body: data.body || "You have an event update.",
-      icon: "/icons/icon-192.png",
-      badge: "/icons/icon-192.png",
-      data: { url: data.url || "/" },
+      icon: `${BASE}icons/icon-192.png`,
+      badge: `${BASE}icons/icon-192.png`,
+      data: { url: data.url || BASE },
     })
   );
 });
 
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
-  event.waitUntil(self.clients.openWindow(event.notification.data?.url || "/"));
+  event.waitUntil(self.clients.openWindow(event.notification.data?.url || BASE));
 });

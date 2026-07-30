@@ -10,9 +10,12 @@ export default function ServiceWorker() {
       "serviceWorker" in navigator &&
       process.env.NODE_ENV === "production"
     ) {
-      navigator.serviceWorker.register("/sw.js").catch(() => {
-        /* ignore registration failures */
-      });
+      const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
+      navigator.serviceWorker
+        .register(`${basePath}/sw.js`, { scope: `${basePath}/` })
+        .catch(() => {
+          /* ignore registration failures */
+        });
     }
   }, []);
   return null;

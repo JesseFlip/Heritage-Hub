@@ -1,9 +1,15 @@
 import type { Category, HeritageEvent } from "@/lib/types";
 
 /**
- * Ticketmaster Discovery API integration (server-side only — keeps the key secret).
- * Get a free key at https://developer.ticketmaster.com and set TICKETMASTER_API_KEY.
- * Docs: https://developer.ticketmaster.com/products-and-docs/apis/discovery-api/v2/
+ * Ticketmaster Discovery API integration — runs entirely client-side.
+ *
+ * GitHub Pages only serves static files, so there's no server to keep an API
+ * key secret behind. Ticketmaster's Discovery API is a public, read-only,
+ * rate-limited-per-key endpoint designed for this kind of direct client use
+ * (https://developer.ticketmaster.com); restrict the key to your domain in
+ * the Ticketmaster developer portal. Get a free key and set it as
+ * NEXT_PUBLIC_TICKETMASTER_API_KEY to enable the "Live" feed — it's entirely
+ * optional and the app works fine without it.
  */
 
 const EMOJI_BY_SEGMENT: Record<string, string> = {
@@ -31,14 +37,14 @@ function pickImage(images: any[] = []): string | undefined {
   return (wide ?? images[0])?.url;
 }
 
-/** Fetch cultural/community events near a point from Ticketmaster. */
+/** Fetch cultural/community events near a point from Ticketmaster. Returns [] without a key. */
 export async function fetchTicketmasterNearby(params: {
   lat: number;
   lng: number;
   radiusMi: number;
   size?: number;
 }): Promise<HeritageEvent[]> {
-  const key = process.env.TICKETMASTER_API_KEY;
+  const key = process.env.NEXT_PUBLIC_TICKETMASTER_API_KEY;
   if (!key) return [];
 
   const url = new URL("https://app.ticketmaster.com/discovery/v2/events.json");
@@ -54,7 +60,7 @@ export async function fetchTicketmasterNearby(params: {
 
   let res: Response;
   try {
-    res = await fetch(url.toString(), { next: { revalidate: 900 } }); // cache 15 min
+    res = await fetch(url.toString());
   } catch {
     return [];
   }
