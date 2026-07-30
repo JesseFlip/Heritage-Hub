@@ -3,6 +3,7 @@
   "version": "0.2.0",
   "private": true,
   "description": "A location-aware PWA to discover, share, and RSVP to local cultural, spiritual, and community heritage events.",
+  "license": "MIT",
   "type": "module",
   "engines": {
     "node": ">=20.9.0"
