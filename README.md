@@ -1,10 +1,37 @@
 # 🪷 HeritageHub
 
+[![CI](https://github.com/JesseFlip/Heritage-Hub/actions/workflows/ci.yml/badge.svg)](https://github.com/JesseFlip/Heritage-Hub/actions/workflows/ci.yml)
+[![Deploy to GitHub Pages](https://github.com/JesseFlip/Heritage-Hub/actions/workflows/deploy.yml/badge.svg)](https://github.com/JesseFlip/Heritage-Hub/actions/workflows/deploy.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 A location-aware **Progressive Web App** to discover, share, and RSVP to local cultural, spiritual, and community heritage events — temple groundbreakings, cultural festivals, free feasts, bhajan nights, kids melas, and more.
 
 Built with **Next.js 16 (App Router, static export)**, **React 19**, **Tailwind CSS 4**, **Supabase + PostGIS** (optional), and **Leaflet**. Ships as an installable, offline-capable PWA, and deploys as a fully static site to **GitHub Pages**.
 
+**Live demo:** https://jesseflip.github.io/Heritage-Hub/
+
 ---
+
+## Quick start (demo mode — no backend needed)
+
+```bash
+npm install
+npm run dev
+```
+
+Open http://localhost:3000. With no Supabase keys set, the app runs in **demo mode** using the bundled sample events (distance math runs client-side). Great for a first look.
+
+> Prefer zero install? Just open `prototype/index.html` in a browser — the full experience with live filters, map, add-to-calendar, and share.
+
+## Tech stack
+
+- **Next.js 16** (App Router, `output: "export"`) + **React 19** + **TypeScript 5**
+- **Tailwind CSS 4** (CSS-first config, no `tailwind.config.js`)
+- **ESLint 9** flat config (`eslint.config.mjs`) via `eslint-config-next`
+- **Vitest** + **React Testing Library** for unit tests
+- **Supabase** (`@supabase/ssr` browser client, `@supabase/supabase-js`) — optional
+- **Leaflet** for maps; free OpenStreetMap tiles by default, Mapbox via env
+- **GitHub Actions** — CI (lint, typecheck, test, build) on every push/PR; CD (build + deploy) to GitHub Pages on `main`
 
 ## What's in the box
 
@@ -34,16 +61,17 @@ heritagehub/
 └── scripts/                    # seed + icon generators
 ```
 
-## Quick start (demo mode — no backend needed)
+## Development
 
 ```bash
 npm install
-npm run dev
+npm run dev          # local dev server
+npm run lint          # ESLint
+npm run typecheck     # tsc --noEmit
+npm test               # Vitest
+npm run build          # static export → out/
+npm run preview        # serve the built out/ directory locally
 ```
-
-Open http://localhost:3000. With no Supabase keys set, the app runs in **demo mode** using the bundled sample events (distance math runs client-side). Great for a first look.
-
-> Prefer zero install? Just open `prototype/index.html` in a browser — the full experience with live filters, map, add-to-calendar, and share.
 
 ## Deploying to GitHub Pages
 
@@ -122,30 +150,6 @@ The feed blends two real sources (no fabricated data):
 
 Organizers add their own events through `/submit` (passwordless email sign-in → form with address geocoding → published under Row Level Security). The friendly step-by-step guide for them lives in `guides/organizer-guide.html` in English, Spanish, Hindi, Gujarati, Punjabi, Chinese, Vietnamese, and Arabic.
 
-## Tech stack
-
-- **Next.js 16** (App Router, `output: "export"`) + **React 19** + **TypeScript 5**
-- **Tailwind CSS 4** (CSS-first config, no `tailwind.config.js`)
-- **ESLint 9** flat config (`eslint.config.mjs`) via `eslint-config-next`
-- **Vitest** + **React Testing Library** for unit tests
-- **Supabase** (`@supabase/ssr` browser client, `@supabase/supabase-js`) — optional
-- **Leaflet** for maps; free OpenStreetMap tiles by default, Mapbox via env
-- **GitHub Actions** — CI (lint, typecheck, test, build) on every push/PR; CD (build + deploy) to GitHub Pages on `main`
-
-## Development
-
-```bash
-npm install
-npm run dev          # local dev server
-npm run lint          # ESLint
-npm run typecheck     # tsc --noEmit
-npm test               # Vitest
-npm run build          # static export → out/
-npm run preview        # serve the built out/ directory locally
-```
-
-## Tech notes
-
 - **Maps default to free OpenStreetMap tiles** (no API key). Set `NEXT_PUBLIC_MAPBOX_TOKEN` to switch to Mapbox.
 - **Row Level Security** is on for every table; published events are world-readable, everything user-owned is scoped to `auth.uid()`.
 - **Distances** are computed in Postgres (`geography` type, meters) and surfaced in miles.
@@ -156,6 +160,6 @@ npm run preview        # serve the built out/ directory locally
 - **Phase 1.5** — Social login, saved events synced to account, preference-based defaults.
 - **V2** — Organizer dashboard with flyer OCR to auto-populate itineraries, event forums for carpools, in-app donations/tipping.
 
----
+## License
 
-Built from the HeritageHub PRD. Sample data is fictional and for demonstration.
+[MIT](LICENSE) — sample data is fictional and for demonstration.
