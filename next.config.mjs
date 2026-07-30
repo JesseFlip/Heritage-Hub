@@ -1,20 +1,25 @@
 /** @type {import('next').NextConfig} */
+
+// GitHub Pages serves project sites from https://<user>.github.io/<repo>/, so
+// every asset/link needs that repo name as a base path. GITHUB_REPOSITORY is
+// set automatically by GitHub Actions ("owner/repo"); NEXT_PUBLIC_BASE_PATH
+// lets you override it locally or for a custom domain (set it to "").
+const repoName = process.env.GITHUB_REPOSITORY?.split("/")[1];
+const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? (repoName ? `/${repoName}` : "");
+
 const nextConfig = {
+  output: "export",
   reactStrictMode: true,
-  images: {
-    // Allow flyer images from Supabase Storage (replace with your project ref).
-    remotePatterns: [
-      { protocol: "https", hostname: "*.supabase.co" },
-    ],
+  basePath,
+  assetPrefix: basePath || undefined,
+  trailingSlash: true,
+  env: {
+    NEXT_PUBLIC_BASE_PATH: basePath,
   },
-  async headers() {
-    return [
-      {
-        // Never cache the service worker itself so updates roll out immediately.
-        source: "/sw.js",
-        headers: [{ key: "Cache-Control", value: "no-cache, no-store, must-revalidate" }],
-      },
-    ];
+  images: {
+    // Static export has no image optimization server; ship images as-is.
+    unoptimized: true,
+    remotePatterns: [{ protocol: "https", hostname: "*.supabase.co" }],
   },
 };
 

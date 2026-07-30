@@ -1,8 +1,10 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import EventCard from "@/components/EventCard";
+import EventDetail from "@/components/EventDetail";
 import FilterChips from "@/components/FilterChips";
 import InstallPrompt from "@/components/InstallPrompt";
 import { getLiveEvents, getNearbyEvents } from "@/lib/events";
@@ -12,6 +14,39 @@ import { DEFAULT_ORIGIN, type Category, type HeritageEvent } from "@/lib/types";
 const MapView = dynamic(() => import("@/components/MapView"), { ssr: false });
 
 export default function DiscoverPage() {
+  // Deep link fallback for event slugs GitHub Pages couldn't pre-render
+  // (see src/app/not-found.tsx) — ?event=<slug> opens the detail view here
+  // instead of routing to /events/<slug>, which only exists for build-time slugs.
+  const [overlaySlug, setOverlaySlug] = useState<string | null>(null);
+  useEffect(() => {
+    const slug = new URLSearchParams(location.search).get("event");
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- location.search is only known client-side; this reads the deep-link param once on mount.
+    if (slug) setOverlaySlug(slug);
+  }, []);
+
+  if (overlaySlug) {
+    return (
+      <>
+        <div className="sticky top-0 z-40 px-4 pt-3">
+          <button
+            onClick={() => {
+              setOverlaySlug(null);
+              history.replaceState(null, "", location.pathname);
+            }}
+            className="surface inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-sm font-semibold shadow-soft"
+          >
+            ← Back to discover
+          </button>
+        </div>
+        <EventDetail key={overlaySlug} slug={overlaySlug} />
+      </>
+    );
+  }
+
+  return <DiscoverFeed />;
+}
+
+function DiscoverFeed() {
   const [origin, setOrigin] = useState(DEFAULT_ORIGIN);
   const [radius, setRadius] = useState(30);
   const [active, setActive] = useState<Set<Category>>(new Set());
@@ -26,6 +61,7 @@ export default function DiscoverPage() {
   // Load saved bookmarks + theme from localStorage (client-only).
   useEffect(() => {
     try {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- localStorage/DOM state is only knowable client-side, after mount.
       setSaved(new Set(JSON.parse(localStorage.getItem("hh-saved") || "[]")));
       setDark(document.documentElement.classList.contains("dark"));
     } catch {}
@@ -34,6 +70,7 @@ export default function DiscoverPage() {
   // Fetch community + live events whenever the geo/filter inputs change.
   useEffect(() => {
     let alive = true;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- re-shows the loading state on every dependency change, not just mount; there's no external system to derive it from.
     setLoading(true);
     const params = { lat: origin.lat, lng: origin.lng, radiusMi: radius, categories: [...active] };
     Promise.all([getNearbyEvents(params), getLiveEvents(params)])
@@ -183,7 +220,7 @@ export default function DiscoverPage() {
             <> + <strong style={{ color: "var(--text)" }}>{liveCount} live</strong> from Ticketmaster</>
           ) : null}
           . Always confirm exact times on the event&rsquo;s official page. Organizers can{" "}
-          <a href="/submit" className="underline" style={{ color: "#b91c1c" }}>add an event</a>.
+          <Link href="/submit" className="underline" style={{ color: "#b91c1c" }}>add an event</Link>.
         </span>
       </div>
 

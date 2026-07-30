@@ -1,5 +1,6 @@
 import rawSample from "@/data/events.json";
 import { createClient } from "@/lib/supabase/client";
+import { fetchTicketmasterNearby } from "@/lib/ticketmaster";
 import { haversineMi } from "@/lib/geo";
 import type { Category, HeritageEvent, NearbyParams } from "@/lib/types";
 
@@ -94,16 +95,10 @@ export function getSampleEvents(): HeritageEvent[] {
   return SAMPLE;
 }
 
-/** Live events from the server route (Ticketmaster). Returns [] if unavailable. */
+/** Live events from Ticketmaster. Returns [] when no API key is configured. */
 export async function getLiveEvents(p: NearbyParams): Promise<HeritageEvent[]> {
   try {
-    const res = await fetch(
-      `/api/events/live?lat=${p.lat}&lng=${p.lng}&radius=${p.radiusMi}`,
-      { cache: "no-store" }
-    );
-    if (!res.ok) return [];
-    const data = await res.json();
-    const events: HeritageEvent[] = data.events ?? [];
+    const events = await fetchTicketmasterNearby({ lat: p.lat, lng: p.lng, radiusMi: p.radiusMi });
     return events
       .map((e) => ({ ...e, distanceMi: haversineMi(p, e) }))
       .filter((e) => !p.categories?.length || e.category.some((c) => p.categories!.includes(c)));
